@@ -3,21 +3,14 @@ const qrcode = require('qrcode-terminal');
 const chromium = require('@sparticuz/chromium');
 const express = require('express');
 
-// --- SERVER BOHONGAN UNTUK MENGAKALI RENDER ---
+// Server bohongan agar Render aman
 const app = express();
 const port = process.env.PORT || 3000;
-
-app.get('/', (req, res) => {
-    res.send('Bot WhatsApp Tahfidz Sedang Berjalan 24 Jam!');
-});
-
-app.listen(port, () => {
-    console.log(`Web server bohongan menyala di port ${port} agar Render aman`);
-});
-// ----------------------------------------------
+app.get('/', (req, res) => res.send('Bot Aktif!'));
+app.listen(port, () => console.log(`Web server nyala di port ${port}`));
 
 async function startBot() {
-    console.log('Menyiapkan browser untuk server cloud...');
+    console.log('Menyiapkan browser mode super ringan untuk server gratis...');
     
     try {
         const client = new Client({
@@ -26,17 +19,24 @@ async function startBot() {
                 executablePath: await chromium.executablePath(),
                 headless: chromium.headless,
                 args: [
-                    ...chromium.args, 
-                    '--no-sandbox', 
+                    ...chromium.args,
+                    '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
-                    '--single-process'
+                    '--disable-accelerated-2d-canvas',
+                    '--disable-gpu',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--disable-extensions'
+                    // Argumen --single-process DIHAPUS karena memicu crash memori di Render
                 ]
             }
         });
 
         client.on('qr', (qr) => {
+            console.log('\n=========================================');
             console.log('SCAN QR CODE INI DI WHATSAPP ANDA:');
+            console.log('=========================================\n');
             qrcode.generate(qr, { small: true });
         });
 
