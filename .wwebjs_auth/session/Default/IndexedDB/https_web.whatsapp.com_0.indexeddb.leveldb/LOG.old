@@ -1,0 +1,41 @@
+2026/11/08-20:27:20.961 21f0 Reusing MANIFEST E:\Bot-Tahfidz\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/11/08-20:27:20.962 21f0 Recovering log #469
+2026/11/08-20:27:21.006 21f0 Reusing old log E:\Bot-Tahfidz\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000469.log 
+2026/11/08-20:27:21.006 21f0 Delete type=2 #458
+2026/11/08-20:27:21.006 21f0 Delete type=2 #459
+2026/11/08-20:27:21.006 21f0 Delete type=2 #460
+2026/11/08-20:27:21.006 21f0 Delete type=2 #461
+2026/11/08-20:27:21.006 21f0 Delete type=2 #462
+2026/11/08-20:27:21.006 21f0 Delete type=2 #463
+2026/11/08-20:27:21.007 21f0 Delete type=2 #464
+2026/11/08-20:27:21.007 21f0 Delete type=2 #465
+2026/11/08-20:27:21.007 21f0 Delete type=2 #466
+2026/11/08-20:27:21.007 21f0 Delete type=2 #467
+2026/11/08-20:27:21.007 21f0 Delete type=2 #470
+2026/11/08-20:27:32.294 16e8 Level-0 table #483: started
+2026/11/08-20:27:32.481 16e8 Level-0 table #483: 1010459 bytes OK
+2026/11/08-20:27:32.562 16e8 Delete type=0 #469
+2026/11/08-20:27:32.986 16e8 Compacting 1@1 + 10@2 files
+2026/11/08-20:27:33.350 16e8 Generated table #484@1: 46705 keys, 2269018 bytes
+2026/11/08-20:27:33.579 16e8 Generated table #485@1: 33168 keys, 2186446 bytes
+2026/11/08-20:27:33.772 16e8 Generated table #486@1: 57529 keys, 2227910 bytes
+2026/11/08-20:27:33.906 16e8 Generated table #487@1: 18237 keys, 2160784 bytes
+2026/11/08-20:27:34.083 16e8 Generated table #488@1: 12525 keys, 2183865 bytes
+2026/11/08-20:27:34.238 16e8 Generated table #489@1: 20672 keys, 2165492 bytes
+2026/11/08-20:27:34.430 16e8 Generated table #490@1: 45696 keys, 2243663 bytes
+2026/11/08-20:27:34.561 16e8 Generated table #491@1: 17854 keys, 2145015 bytes
+2026/11/08-20:27:34.795 16e8 Generated table #492@1: 108939 keys, 2263690 bytes
+2026/11/08-20:27:34.919 16e8 Generated table #493@1: 38221 keys, 1048695 bytes
+2026/11/08-20:27:34.919 16e8 Compacted 1@1 + 10@2 files => 20894578 bytes
+2026/11/08-20:27:34.967 16e8 compacted to: files[ 0 0 10 0 0 0 0 ]
+2026/11/08-20:27:34.967 16e8 Delete type=2 #471
+2026/11/08-20:27:34.967 16e8 Delete type=2 #472
+2026/11/08-20:27:34.967 16e8 Delete type=2 #473
+2026/11/08-20:27:34.967 16e8 Delete type=2 #474
+2026/11/08-20:27:34.967 16e8 Delete type=2 #475
+2026/11/08-20:27:34.967 16e8 Delete type=2 #476
+2026/11/08-20:27:34.967 16e8 Delete type=2 #477
+2026/11/08-20:27:34.968 16e8 Delete type=2 #478
+2026/11/08-20:27:34.968 16e8 Delete type=2 #479
+2026/11/08-20:27:34.968 16e8 Delete type=2 #480
+2026/11/08-20:27:34.968 16e8 Delete type=2 #483
