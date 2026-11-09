@@ -39,11 +39,42 @@ const daftarGrup = [
     'status@broadcast'
 ];
 
-// Fungsi Jeda Custom yang kebal error (3 detik)
+// Fungsi Jeda Custom (3 detik)
 const jeda = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Fungsi untuk mengambil 1 materi saja berurutan berdasarkan hari
+function ambilMateriSatuSatu(filePath) {
+    try {
+        if (!fs.existsSync(filePath)) return null;
+        const raw = fs.readFileSync(filePath, 'utf8');
+        const data = JSON.parse(raw);
+
+        // Jika JSON berupa array/daftar isi materi
+        if (Array.isArray(data)) {
+            if (data.length === 0) return null;
+
+            // Hitung indeks berdasarkan hari ke-berapa dalam setahun (kebal restart server)
+            const hariKe = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+            const index = (hariKe - 1) % data.length;
+            const item = data[index];
+
+            if (typeof item === 'string') return item;
+            if (typeof item === 'object') {
+                return item.materi || item.quote || item.teks || item.isi || JSON.stringify(item, null, 2);
+            }
+            return String(item);
+        }
+
+        // Jika JSON bukan array, kirim teksnya langsung
+        return typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    } catch (err) {
+        console.error(`Gagal membaca ${filePath}:`, err.message);
+        return null;
+    }
+}
+
 let sock;
-let jadwalAktif = false; // Pengunci agar alarm tidak dobel
+let jadwalAktif = false;
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('sesi_bot_tahfidz');
@@ -70,7 +101,6 @@ async function startBot() {
             qrCodeData = ''; 
             console.log('Bot Terhubung ke WhatsApp!');
 
-            // Hanya daftarkan jadwal 1 KALI saja meski WA sering putus-nyambung
             if (!jadwalAktif) {
                 console.log('Menyiapkan alarm jadwal otomatis...');
                 mulaiJadwal();
@@ -83,52 +113,44 @@ async function startBot() {
 }
 
 function mulaiJadwal() {
-    // ===============================================
     // ALARM MATERI PAGI (05:00 WIB)
-    // ===============================================
     cron.schedule('0 5 * * *', async () => {
         console.log('Menyiarkan materi pagi...');
-        try {
-            const dataPagi = JSON.parse(fs.readFileSync('./materi_pagi.json', 'utf8'));
-            const pesanPagi = `*Bismillah, Materi Pagi Tahfidz:*\n\n${JSON.stringify(dataPagi, null, 2)}`;
-            
-            for (const target of daftarGrup) {
-                try {
-                    await sock.sendMessage(target, { text: pesanPagi });
-                    console.log(`[SUKSES] Terkirim ke: ${target}`);
-                    await jeda(3000); 
-                } catch (err) {
-                    console.error(`[GAGAL] Target: ${target} | Alasan:`, err.message || err);
-                }
+        const isiMateri = ambilMateriSatuSatu('./materi_pagi.json');
+        if (!isiMateri) return console.log('Materi pagi kosong/gagal dibaca.');
+
+        const pesanPagi = `*Bismillah, Materi Pagi Tahfidz:*\n\n${isiMateri}`;
+        
+        for (const target of daftarGrup) {
+            try {
+                await sock.sendMessage(target, { text: pesanPagi });
+                console.log(`[SUKSES] Terkirim ke: ${target}`);
+                await jeda(3000); 
+            } catch (err) {
+                console.error(`[GAGAL] Target: ${target} | Alasan:`, err.message || err);
             }
-            console.log('Selesai proses pengiriman materi pagi!');
-        } catch (error) {
-            console.error('Gagal membaca file materi_pagi.json', error.message);
         }
+        console.log('Selesai kirim materi pagi!');
     }, { timezone: "Asia/Jakarta" });
 
-    // ===============================================
     // ALARM QUOTE MALAM (20:00 WIB)
-    // ===============================================
     cron.schedule('0 20 * * *', async () => {
         console.log('Menyiarkan quote malam...');
-        try {
-            const dataMalam = JSON.parse(fs.readFileSync('./quote_malam.json', 'utf8'));
-            const pesanMalam = `*Quote Malam Tahfidz:*\n\n${JSON.stringify(dataMalam, null, 2)}`;
-            
-            for (const target of daftarGrup) {
-                try {
-                    await sock.sendMessage(target, { text: pesanMalam });
-                    console.log(`[SUKSES] Terkirim ke: ${target}`);
-                    await jeda(3000); 
-                } catch (err) {
-                    console.error(`[GAGAL] Target: ${target} | Alasan:`, err.message || err);
-                }
+        const isiQuote = ambilMateriSatuSatu('./quote_malam.json');
+        if (!isiQuote) return console.log('Quote malam kosong/gagal dibaca.');
+
+        const pesanMalam = `*Quote Malam Tahfidz:*\n\n${isiQuote}`;
+        
+        for (const target of daftarGrup) {
+            try {
+                await sock.sendMessage(target, { text: pesanMalam });
+                console.log(`[SUKSES] Terkirim ke: ${target}`);
+                await jeda(3000); 
+            } catch (err) {
+                console.error(`[GAGAL] Target: ${target} | Alasan:`, err.message || err);
             }
-            console.log('Selesai proses pengiriman quote malam!');
-        } catch (error) {
-            console.error('Gagal membaca file quote_malam.json', error.message);
         }
+        console.log('Selesai kirim quote malam!');
     }, { timezone: "Asia/Jakarta" });
 }
 
