@@ -7,7 +7,7 @@ const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 3000;
 let qrCodeData = ''; 
-let sock; // Dibuat global agar bisa diakses web
+let sock;
 
 app.get('/', (req, res) => {
     if (qrCodeData) {
@@ -32,18 +32,15 @@ app.get('/', (req, res) => {
     }
 });
 
-// FITUR BARU: Pelacak ID Grup & Komunitas Asli
 app.get('/cek-id', async (req, res) => {
-    if (!sock) {
-        return res.send('Bot belum siap, silakan *refresh* halaman ini beberapa detik lagi.');
-    }
+    if (!sock) return res.send('Bot belum siap, silakan *refresh* halaman ini beberapa detik lagi.');
     try {
         const groups = await sock.groupFetchAllParticipating();
         let html = '<h2 style="font-family: Arial;">Daftar ID Grup & Komunitas Asli:</h2><ul style="font-family: Arial; line-height: 1.8;">';
         for (const id in groups) {
             html += `<li><strong>${groups[id].subject}</strong> <br> ID: <code style="background:#eee; padding:2px 5px;">${id}</code></li>`;
         }
-        html += '</ul><p style="font-family: Arial; color: red;">*Silakan COPY ID di atas dan ganti ke dalam daftarGrup di kode bot.js Bapak!*</p>';
+        html += '</ul>';
         res.send(html);
     } catch (error) {
         res.send('Gagal mengambil data grup: ' + error.message);
@@ -52,20 +49,21 @@ app.get('/cek-id', async (req, res) => {
 
 app.listen(port, () => console.log(`Web server menyala di port ${port}`));
 
-// ⚠️ NANTI GANTI ID DI BAWAH INI DENGAN HASIL DARI WEB /CEK-ID
+// DAFTAR GRUP & STATUS YANG SUDAH MENGGUNAKAN ID ASLI
 const daftarGrup = [
-    '628564305104-1507311543@g.us', // Ganti nanti
-    '120363085718653344@g.us', // Ganti nanti
-    '120363044211428304@g.us', // Ganti nanti
-    '120363324492590630@g.us', // Ganti nanti
-    '62881023405935-1601532899@g.us', // Ganti nanti
-    '120363103623228409@g.us', // Ganti nanti
-    '120363164769501166@g.us', // Ganti nanti
-    '6285169705472@s.whatsapp.net', // Nomor Pribadi Bapak (Sudah Diperbaiki)
-    'status@broadcast'
+    '120363321025180915@g.us',      // Official Motivasi Tahfidz Qur'an
+    '6285643845104-1587311543@g.us', // Grup ID (dari web)
+    '120363164769501166@g.us',      // Tahfidz dan Tahsin Online Akhwat
+    '120363163623228409@g.us',      // Tahfidz dan Tahsin Online Ikhwan
+    '62881023405935-1598531632@g.us', // Kelas Tahsin Online Akhwat Gratis
+    '62881023405935-1601532896@g.us', // Kelas Tahfidz & Tahsin Tilawah 30 Juz Online Gratis
+    '120363085718653344@g.us',      // Motivasi Tahfidz Quran Ikhwan
+    '120363044211428304@g.us',      // Motivasi Tahfidz Qur'an Akhwat
+    '120363324492590636@g.us',      // Official Motivasi Tahfidz Qur'an (2)
+    '6285169705472@s.whatsapp.net', // Nomor Pribadi Bapak
+    'status@broadcast'              // Status WA
 ];
 
-// Fungsi Jeda Custom (3 detik)
 const jeda = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 function ambilMateriSatuSatu(filePath) {
@@ -134,10 +132,9 @@ async function startBot() {
 async function kirimPesanAman(target, teks) {
     try {
         if (target === 'status@broadcast') {
-            // Syarat WA agar status bisa terkirim (Wajib ada statusJidList)
             await sock.sendMessage('status@broadcast', { text: teks }, {
                 statusJidList: [
-                    '6285169705472@s.whatsapp.net', // Nomor Bapak
+                    '6285169705472@s.whatsapp.net', // Nomor Pribadi Bapak
                     sock.user.id.split(':')[0] + '@s.whatsapp.net' // Nomor Bot itu sendiri
                 ]
             });
@@ -151,6 +148,7 @@ async function kirimPesanAman(target, teks) {
 }
 
 function mulaiJadwal() {
+    // JADWAL PAGI: 05:30 WIB
     cron.schedule('30 5 * * *', async () => {
         console.log('Menyiarkan materi pagi...');
         const isiMateri = ambilMateriSatuSatu('./materi_pagi.json');
@@ -164,6 +162,7 @@ function mulaiJadwal() {
         console.log('Selesai kirim materi pagi!');
     }, { timezone: "Asia/Jakarta" });
 
+    // JADWAL MALAM: 19:30 WIB
     cron.schedule('30 19 * * *', async () => {
         console.log('Menyiarkan quote malam...');
         const isiQuote = ambilMateriSatuSatu('./quote_malam.json');
