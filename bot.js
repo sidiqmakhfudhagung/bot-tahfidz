@@ -7,6 +7,7 @@ const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 3000;
 let qrCodeData = ''; 
+let sock; // Dibuat global agar bisa diakses web
 
 app.get('/', (req, res) => {
     if (qrCodeData) {
@@ -21,62 +22,73 @@ app.get('/', (req, res) => {
             </html>
         `);
     } else {
-        res.send(`<h2 style="text-align:center; color: #2e7d32; margin-top:50px;">Alhamdulillah! Bot Aktif dan Jadwal Berjalan.</h2>`);
+        res.send(`
+            <div style="text-align:center; font-family: Arial; padding:50px;">
+                <h2 style="color: #2e7d32;">Alhamdulillah! Bot Aktif dan Jadwal Berjalan.</h2>
+                <br>
+                <a href="/cek-id" style="padding: 10px 20px; background: #075e54; color: white; text-decoration: none; border-radius: 5px;">Cek Daftar ID Grup & Komunitas</a>
+            </div>
+        `);
+    }
+});
+
+// FITUR BARU: Pelacak ID Grup & Komunitas Asli
+app.get('/cek-id', async (req, res) => {
+    if (!sock) {
+        return res.send('Bot belum siap, silakan *refresh* halaman ini beberapa detik lagi.');
+    }
+    try {
+        const groups = await sock.groupFetchAllParticipating();
+        let html = '<h2 style="font-family: Arial;">Daftar ID Grup & Komunitas Asli:</h2><ul style="font-family: Arial; line-height: 1.8;">';
+        for (const id in groups) {
+            html += `<li><strong>${groups[id].subject}</strong> <br> ID: <code style="background:#eee; padding:2px 5px;">${id}</code></li>`;
+        }
+        html += '</ul><p style="font-family: Arial; color: red;">*Silakan COPY ID di atas dan ganti ke dalam daftarGrup di kode bot.js Bapak!*</p>';
+        res.send(html);
+    } catch (error) {
+        res.send('Gagal mengambil data grup: ' + error.message);
     }
 });
 
 app.listen(port, () => console.log(`Web server menyala di port ${port}`));
 
+// ⚠️ NANTI GANTI ID DI BAWAH INI DENGAN HASIL DARI WEB /CEK-ID
 const daftarGrup = [
-    '628564305104-1507311543@g.us',
-    '120363085718653344@g.us',
-    '120363044211428304@g.us',
-    '120363324492590630@g.us',
-    '62881023405935-1601532899@g.us',
-    '120363103623228409@g.us',
-    '120363164769501166@g.us',
-    '6285169705477@s.whatsapp.net',
+    '628564305104-1507311543@g.us', // Ganti nanti
+    '120363085718653344@g.us', // Ganti nanti
+    '120363044211428304@g.us', // Ganti nanti
+    '120363324492590630@g.us', // Ganti nanti
+    '62881023405935-1601532899@g.us', // Ganti nanti
+    '120363103623228409@g.us', // Ganti nanti
+    '120363164769501166@g.us', // Ganti nanti
+    '6285169705472@s.whatsapp.net', // Nomor Pribadi Bapak (Sudah Diperbaiki)
     'status@broadcast'
 ];
 
 // Fungsi Jeda Custom (3 detik)
 const jeda = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Fungsi untuk mengambil 1 materi saja berurutan berdasarkan hari
 function ambilMateriSatuSatu(filePath) {
     try {
         if (!fs.existsSync(filePath)) return null;
         const raw = fs.readFileSync(filePath, 'utf8');
         const data = JSON.parse(raw);
 
-        // Jika JSON berupa array/daftar isi materi
         if (Array.isArray(data)) {
             if (data.length === 0) return null;
-
-            // KUNCI TANGGAL MULAI KE HARI SENIN KEMARIN (9 November 2026)
             const tanggalMulai = new Date('2026-11-09T00:00:00+07:00'); 
-            
-            // Ambil waktu server dan paksa ke zona waktu WIB (Jakarta)
             const sekarang = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-
-            // Hitung selisih hari dari tanggal mulai
             const selisihWaktu = sekarang.getTime() - tanggalMulai.getTime();
             let selisihHari = Math.floor(selisihWaktu / (1000 * 3600 * 24));
-            
             if (selisihHari < 0) selisihHari = 0;
-
-            // Ambil materi secara berurutan
             const index = selisihHari % data.length;
             const item = data[index];
-
             if (typeof item === 'string') return item;
             if (typeof item === 'object') {
                 return item.materi || item.quote || item.teks || item.isi || JSON.stringify(item, null, 2);
             }
             return String(item);
         }
-
-        // Jika JSON bukan array, kirim teksnya langsung
         return typeof data === 'string' ? data : JSON.stringify(data, null, 2);
     } catch (err) {
         console.error(`Gagal membaca ${filePath}:`, err.message);
@@ -84,7 +96,6 @@ function ambilMateriSatuSatu(filePath) {
     }
 }
 
-let sock;
 let jadwalAktif = false;
 
 async function startBot() {
@@ -99,19 +110,16 @@ async function startBot() {
 
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
-
         if (qr) qrCodeData = qr; 
-
         if (connection === 'close') {
             const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
             if (shouldReconnect) {
-                console.log('Koneksi terputus sesaat, otomatis menyambung ulang...');
+                console.log('Koneksi terputus, menyambung ulang...');
                 startBot(); 
             }
         } else if (connection === 'open') {
             qrCodeData = ''; 
             console.log('Bot Terhubung ke WhatsApp!');
-
             if (!jadwalAktif) {
                 console.log('Menyiapkan alarm jadwal otomatis...');
                 mulaiJadwal();
@@ -119,47 +127,52 @@ async function startBot() {
             }
         }
     });
-
     sock.ev.on('creds.update', saveCreds);
 }
 
+// Fungsi untuk mengirim pesan yang membedakan Status dan Chat Biasa
+async function kirimPesanAman(target, teks) {
+    try {
+        if (target === 'status@broadcast') {
+            // Syarat WA agar status bisa terkirim (Wajib ada statusJidList)
+            await sock.sendMessage('status@broadcast', { text: teks }, {
+                statusJidList: [
+                    '6285169705472@s.whatsapp.net', // Nomor Bapak
+                    sock.user.id.split(':')[0] + '@s.whatsapp.net' // Nomor Bot itu sendiri
+                ]
+            });
+        } else {
+            await sock.sendMessage(target, { text: teks });
+        }
+        console.log(`[SUKSES] Terkirim ke: ${target}`);
+    } catch (err) {
+        console.error(`[GAGAL] Target: ${target} | Alasan:`, err.message || err);
+    }
+}
+
 function mulaiJadwal() {
-    // ALARM MATERI PAGI (05:00 WIB)
-    cron.schedule('0 5 * * *', async () => {
+    cron.schedule('30 5 * * *', async () => {
         console.log('Menyiarkan materi pagi...');
         const isiMateri = ambilMateriSatuSatu('./materi_pagi.json');
-        if (!isiMateri) return console.log('Materi pagi kosong/gagal dibaca.');
-
+        if (!isiMateri) return console.log('Materi pagi kosong.');
         const pesanPagi = `*Bismillah, Materi Pagi Tahfidz:*\n\n${isiMateri}`;
         
         for (const target of daftarGrup) {
-            try {
-                await sock.sendMessage(target, { text: pesanPagi });
-                console.log(`[SUKSES] Terkirim ke: ${target}`);
-                await jeda(3000); 
-            } catch (err) {
-                console.error(`[GAGAL] Target: ${target} | Alasan:`, err.message || err);
-            }
+            await kirimPesanAman(target, pesanPagi);
+            await jeda(3000); 
         }
         console.log('Selesai kirim materi pagi!');
     }, { timezone: "Asia/Jakarta" });
 
-    // ALARM QUOTE MALAM (20:00 WIB)
-    cron.schedule('0 20 * * *', async () => {
+    cron.schedule('30 19 * * *', async () => {
         console.log('Menyiarkan quote malam...');
         const isiQuote = ambilMateriSatuSatu('./quote_malam.json');
-        if (!isiQuote) return console.log('Quote malam kosong/gagal dibaca.');
-
+        if (!isiQuote) return console.log('Quote malam kosong.');
         const pesanMalam = `*Quote Malam Tahfidz:*\n\n${isiQuote}`;
         
         for (const target of daftarGrup) {
-            try {
-                await sock.sendMessage(target, { text: pesanMalam });
-                console.log(`[SUKSES] Terkirim ke: ${target}`);
-                await jeda(3000); 
-            } catch (err) {
-                console.error(`[GAGAL] Target: ${target} | Alasan:`, err.message || err);
-            }
+            await kirimPesanAman(target, pesanMalam);
+            await jeda(3000); 
         }
         console.log('Selesai kirim quote malam!');
     }, { timezone: "Asia/Jakarta" });
